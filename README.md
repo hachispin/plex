@@ -11,6 +11,8 @@ Personal desktop fork of [IBM Plex](https://github.com/IBM/plex), containing com
 
 Open the `.ttf` files in your desktop font manager to install them. Reinstall them after updating existing fonts.
 
+The ordinary Sans, Serif, and Mono families use the heavier Text (450) design for Regular and Italic. These faces retain their original names and weight-400 metadata so applications selecting the default family style get the Text appearance automatically. The separately named Text files retain their 450 metadata.
+
 All Sans, Serif, and Mono italics use the single-storey `g` and its accented forms by default. The `ss02` alternates are built into their character mappings, so no application feature setting is needed.
 
 Standard ligatures (`liga`), such as `fi`, `fl`, `ff`, `ffi`, and `ffl`, are disabled in the font binaries.

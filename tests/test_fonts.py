@@ -27,6 +27,38 @@ def shape(path, text, features=None):
 
 
 class FontDefaultsTests(unittest.TestCase):
+    def test_regular_uses_text_design(self):
+        for path in FONT_PATHS:
+            if path.parts[-5] == "plex-math" or path.stem.rsplit("-", 1)[1] not in ("Regular", "Italic"):
+                continue
+
+            variant = "TextItalic" if path.stem.endswith("-Italic") else "Text"
+            source = path.with_name(f"{path.stem.rsplit('-', 1)[0]}-{variant}.ttf")
+
+            with self.subTest(font=path.name), TTFont(path) as regular, TTFont(source) as text:
+                self.assertEqual(regular["OS/2"].usWeightClass, 400)
+                self.assertEqual(text["OS/2"].usWeightClass, 450)
+                self.assertNotIn("Text", regular["name"].getDebugName(1))
+                self.assertEqual(regular.getGlyphOrder(), text.getGlyphOrder())
+
+                for tag in text.reader.keys():
+                    if tag not in ("name", "head", "OS/2"):
+                        self.assertEqual(regular.reader[tag], text.reader[tag], tag)
+
+    def test_text_promotion_is_repeatable(self):
+        promote = runpy.run_path(str(ROOT / "scripts/customize-fonts.py"))["use_text_as_regular"]
+
+        with tempfile.TemporaryDirectory() as directory:
+            for family in ("plex-sans", "plex-serif", "plex-mono"):
+                target = Path(directory) / family / "fonts/complete/ttf"
+                target.mkdir(parents=True)
+
+                for source in (ROOT / "packages" / family / "fonts/complete/ttf").glob("*.ttf"):
+                    shutil.copyfile(source, target / source.name)
+
+                with self.subTest(family=family):
+                    self.assertEqual(promote(target), [])
+
     def test_customization_is_repeatable(self):
         customize = runpy.run_path(str(ROOT / "scripts/customize-fonts.py"))["customize_font"]
 

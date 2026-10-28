@@ -4,6 +4,7 @@ Requires fonttools. Run again after replacing fonts with upstream builds.
 """
 
 from collections import Counter
+from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from fontTools.ttLib.tables import otTables
 
 PACKAGES = Path(__file__).resolve().parents[1] / "packages"
 NUMERIC_COLON_FAMILIES = {"plex-sans", "plex-serif"}
+TEXT_DEFAULT_FAMILIES = {"plex-sans", "plex-serif", "plex-mono"}
 
 
 def enable_italic_ss02(font):
@@ -221,14 +223,58 @@ def customize_font(path):
     return True
 
 
+def use_text_as_regular(directory):
+    changed = []
+
+    if directory.parts[-4] not in TEXT_DEFAULT_FAMILIES:
+        return changed
+
+    for source in sorted(directory.glob("*-Text*.ttf")):
+        variant = source.stem.rsplit("-", 1)[1]
+
+        if variant not in ("Text", "TextItalic"):
+            continue
+
+        target_variant = "Regular" if variant == "Text" else "Italic"
+        target = source.with_name(f"{source.stem.rsplit('-', 1)[0]}-{target_variant}.ttf")
+
+        with TTFont(source, recalcBBoxes=False, recalcTimestamp=False) as font, TTFont(target) as regular:
+            # Keep the normal family's identity and style links so applications
+            # requesting Regular/400 receive the heavier Text design.
+            font["name"] = deepcopy(regular["name"])
+            font["OS/2"].usWeightClass = 400
+            font["OS/2"].fsSelection = regular["OS/2"].fsSelection
+            font["head"].macStyle = regular["head"].macStyle
+
+            if "DSIG" in font and font["DSIG"].usNumSigs:
+                del font["DSIG"]
+
+            output = BytesIO()
+            font.save(output)
+
+        data = output.getvalue()
+
+        if target.read_bytes() != data:
+            target.write_bytes(data)
+            changed.append(target)
+
+    return changed
+
+
 def main():
-    changed = Counter()
+    changed = set()
 
     for path in sorted(PACKAGES.glob("plex-*/fonts/complete/ttf/*.ttf")):
         if customize_font(path):
-            changed[path.parts[-5]] += 1
+            changed.add(path)
 
-    print("Updated desktop fonts:", dict(sorted(changed.items())))
+    # Promote Text only after its glyph defaults and contextual rules are ready.
+    for directory in sorted(PACKAGES.glob("plex-*/fonts/complete/ttf")):
+        changed.update(use_text_as_regular(directory))
+
+    counts = Counter(path.parts[-5] for path in changed)
+
+    print("Updated desktop fonts:", dict(sorted(counts.items())))
 
 
 if __name__ == "__main__":
