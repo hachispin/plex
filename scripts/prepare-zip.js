@@ -1,15 +1,11 @@
 const fs = require('fs-extra');
 const path = require('path');
+const families = require('./data/families');
 
 const OUTPUT_DIRECTORY = path.resolve(__dirname, '../zip');
 
 const getFontDirectories = () => {
-  const files = fs.readdirSync(path.resolve('./packages/'));
-
-  // Don't build Variable fonts for now
-  return files.filter(
-    name => name.includes('plex-') && !name.includes('variable')
-  );
+  return families.map(({ packageName }) => packageName);
 };
 
 const globDirectory = type => {

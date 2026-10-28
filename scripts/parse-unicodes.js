@@ -1,10 +1,7 @@
 /**
  * `scripts/parse-unicodes.js` is used to help parse unicodes from one of the provided CSS file and output file ready to be used in unicodes folder
- *  usage: yarn unicodes -i {LANGCODE} -p /packages/{package-name}/fonts/split/woff/hinted/{css-input-filename}.css -f {output-filename}.js
- *  example: yarn unicodes -i TC -p /packages/plex-sans-tc/fonts/split/woff/hinted/IBMPlexSansTC-Bold.css -f chinesetc.js
- *
  *  usage for base type set: yarn unicodes -p /packages/{package-name}/fonts/split/woff/{css-input-filename}.css -f {output-filename}.js
- *  example: yarn unicodes -p /packages/plex-sans-condensed/fonts/split/woff/IBMPlexSansCondensed-Bold.css -f condensed.js
+ *  example: yarn unicodes -p /packages/plex-serif/fonts/split/woff/IBMPlexSerif-Bold.css -f serif.js
  */
 
 const fs = require('fs-extra');

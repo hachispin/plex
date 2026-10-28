@@ -9,10 +9,6 @@ const familiesData = process.env.npm_package_config_family ? families.filter(({ 
 const OUTPUT_DIRECTORY = path.resolve(__dirname, '../cdn');
 
 const excludedFromAllCSS = [
-  'IBM Plex Sans KR',
-  'IBM Plex Sans JP',
-  'IBM Plex Sans TC',
-  'IBM Plex Sans SC',
   'IBM Plex Math'
 ]
 

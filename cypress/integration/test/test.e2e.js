@@ -17,9 +17,11 @@ describe('Plex test page', () => {
   });
 
   it('should list every Plex family in the family selector', () => {
-    cy.get('#plex-family option').should('have.length.greaterThan', 1);
+    cy.get('#plex-family option').should('have.length', 5);
     cy.get('#plex-family option[value="IBM Plex Sans"]').should('exist');
     cy.get('#plex-family option[value="IBM Plex Mono"]').should('exist');
+    cy.get('#plex-family option[value="IBM Plex Serif"]').should('exist');
+    cy.get('#plex-family option[value="IBM Plex Math"]').should('exist');
   });
 
   it('should apply IBM Plex Sans to the body', () => {
