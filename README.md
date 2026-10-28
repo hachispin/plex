@@ -29,4 +29,6 @@ Please download the latest zip files from our [releases page](https://github.com
 | IBM Plex Sans             | [@ibm/plex-sans](https://www.npmjs.com/package/@ibm/plex-sans)                         |
 | IBM Plex Serif            | [@ibm/plex-serif](https://www.npmjs.com/package/@ibm/plex-serif)                       |
 
-Italic web fonts enable stylistic set `ss02` by default for the single-storey `g`, including accented forms. This applies to every italic weight in the generated CSS and SCSS and the supplied subset CSS files.
+Italic fonts use the single-storey `g`, including accented forms, by default in the font binaries and web styles. This applies to every italic weight in Sans, Serif, and Mono.
+
+After replacing font binaries with upstream builds, install `fonttools[woff]` and run `python3 scripts/enable-italic-ss02.py` to apply the same defaults to TTF, OTF, WOFF, WOFF2, and EOT files.
