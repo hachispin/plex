@@ -17,6 +17,8 @@ All Sans, Serif, and Mono italics use the single-storey `g` and its accented for
 
 Standard ligatures (`liga`), such as `fi`, `fl`, `ff`, `ffi`, and `ffl`, are disabled in the font binaries.
 
+Sans and Serif apply the same pair kerning to repeated backslashes as repeated forward slashes, so runs such as `///` and `\\\` receive matching spacing adjustments.
+
 Sans and Serif use the existing ratio glyph (`∶`) for a colon directly between digits, as in `1:1` or `12:34`. This contextual alternate (`calt`) is enabled by default; other colons keep their usual appearance. It also works with alternate digit styles. Mono and Math do not apply this substitution.
 
 After replacing TTFs with upstream versions, reapply these defaults:

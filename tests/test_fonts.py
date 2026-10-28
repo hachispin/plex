@@ -87,6 +87,27 @@ class FontDefaultsTests(unittest.TestCase):
                     self.assertEqual(font.getBestCmap()[ord("g")], "g.alt01")
 
     @unittest.skipUnless(shutil.which("hb-shape"), "Requires the HarfBuzz hb-shape command")
+    def test_repeated_slash_kerning(self):
+        for path in FONT_PATHS:
+            for length in (2, 3, 5):
+                with self.subTest(font=path.name, length=length):
+                    adjustments = []
+
+                    for character in ("/", "\\"):
+                        plain = shape(path, character * length, "kern=0")
+                        kerned = shape(path, character * length)
+                        self.assertEqual(len(kerned), length)
+                        adjustments.append([
+                            tuple(glyph[key] - original[key] for key in ("ax", "ay", "dx", "dy"))
+                            for glyph, original in zip(kerned, plain)
+                        ])
+
+                    self.assertEqual(adjustments[0], adjustments[1])
+
+                    if path.parts[-5] in TARGET_FAMILIES:
+                        self.assertLess(adjustments[0][0][0], 0)
+
+    @unittest.skipUnless(shutil.which("hb-shape"), "Requires the HarfBuzz hb-shape command")
     def test_numeric_colons(self):
         numeric_text = " ".join(f"{left}:{right}" for left in range(10) for right in range(10))
         numeric_text += " 12:34 1:2:3 00:00:00 a1:1b (123:456)"

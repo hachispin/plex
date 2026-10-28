@@ -17,6 +17,7 @@ from fontTools.ttLib.tables import otTables
 PACKAGES = Path(__file__).resolve().parents[1] / "packages"
 NUMERIC_COLON_FAMILIES = {"plex-sans", "plex-serif"}
 TEXT_DEFAULT_FAMILIES = {"plex-sans", "plex-serif", "plex-mono"}
+SLASH_KERNING_FAMILIES = {"plex-sans", "plex-serif"}
 
 
 def enable_italic_ss02(font):
@@ -190,6 +191,78 @@ def add_numeric_colon(font):
     return True
 
 
+def match_repeated_slash_kerning(font):
+    gpos = font.get("GPOS")
+
+    if gpos is None or gpos.table.FeatureList is None:
+        return False
+
+    cmap = font.getBestCmap()
+    slash = cmap[ord("/")]
+    backslash = cmap[ord("\\")]
+    glyph_map = font.getReverseGlyphMap()
+    lookups = {
+        index
+        for feature in gpos.table.FeatureList.FeatureRecord
+        if feature.FeatureTag == "kern"
+        for index in feature.Feature.LookupListIndex
+    }
+    changed = False
+
+    for index in sorted(lookups):
+        lookup = gpos.table.LookupList.Lookup[index]
+
+        if lookup.LookupType not in (2, 9):
+            continue
+
+        for subtable in lookup.SubTable:
+            if lookup.LookupType == 9:
+                if subtable.ExtensionLookupType != 2:
+                    continue
+
+                subtable = subtable.ExtSubTable
+
+            if subtable.Format != 1 or slash not in subtable.Coverage.glyphs:
+                continue
+
+            pairs = dict(zip(subtable.Coverage.glyphs, subtable.PairSet))
+            source = next(
+                (pair for pair in pairs[slash].PairValueRecord if pair.SecondGlyph == slash),
+                None,
+            )
+
+            if source is None:
+                continue
+
+            if backslash not in pairs:
+                pairs[backslash] = otTables.PairSet()
+                pairs[backslash].PairValueRecord = []
+
+            pair_set = pairs[backslash]
+            target = next(
+                (pair for pair in pair_set.PairValueRecord if pair.SecondGlyph == backslash),
+                None,
+            )
+
+            if target is not None and target.Value1 == source.Value1 and target.Value2 == source.Value2:
+                continue
+
+            if target is not None:
+                pair_set.PairValueRecord.remove(target)
+
+            replacement = deepcopy(source)
+            replacement.SecondGlyph = backslash
+            pair_set.PairValueRecord.append(replacement)
+            pair_set.PairValueRecord.sort(key=lambda pair: glyph_map[pair.SecondGlyph])
+            pair_set.PairValueCount = len(pair_set.PairValueRecord)
+            subtable.Coverage = buildCoverage(pairs, glyph_map)
+            subtable.PairSet = [pairs[glyph] for glyph in subtable.Coverage.glyphs]
+            subtable.PairSetCount = len(subtable.PairSet)
+            changed = True
+
+    return changed
+
+
 def customize_font(path):
     with TTFont(path, recalcBBoxes=False, recalcTimestamp=False) as font:
         gsub = font.get("GSUB")
@@ -202,8 +275,11 @@ def customize_font(path):
         numeric_colon_changed = (
             add_numeric_colon(font) if path.parts[-5] in NUMERIC_COLON_FAMILIES else False
         )
+        kerning_changed = (
+            match_repeated_slash_kerning(font) if path.parts[-5] in SLASH_KERNING_FAMILIES else False
+        )
 
-        if not italic_changed and not ligatures_changed and not numeric_colon_changed:
+        if not any((italic_changed, ligatures_changed, numeric_colon_changed, kerning_changed)):
             return False
 
         if not ligatures_changed and not numeric_colon_changed:
@@ -211,6 +287,11 @@ def customize_font(path):
             original_gsub = DefaultTable("GSUB")
             original_gsub.data = font.reader["GSUB"]
             font["GSUB"] = original_gsub
+
+        if not kerning_changed and "GPOS" in font:
+            original_gpos = DefaultTable("GPOS")
+            original_gpos.data = font.reader["GPOS"]
+            font["GPOS"] = original_gpos
 
         if "DSIG" in font and font["DSIG"].usNumSigs:
             del font["DSIG"]
