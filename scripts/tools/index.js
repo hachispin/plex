@@ -163,6 +163,11 @@ const creatWeightScss = (weight, family, unicodes, dir) => {
   fileContent += `\t\tfont-family: '${family.name}';\n`;
   fileContent += `\t\tfont-style: ${weight.properties.fontStyle};\n`;
   fileContent += `\t\tfont-weight: ${weight.properties.fontWeight};\n`;
+
+  if (italic) {
+    fileContent += `\t\tfont-feature-settings: 'ss02' 1;\n`;
+  }
+
   fileContent += `\t\tsrc: local('${localFileName}'), local('${localPostscriptName}'), url('${urls.woff2Complete.replace('-#{$unicode-range}', '')}') format('woff2'), url('${urls.woff.replace('-#{$unicode-range}', '')}') format('woff');\n`;
   fileContent += `\t}\n}`;
 
@@ -186,6 +191,11 @@ const creatWeightScss = (weight, family, unicodes, dir) => {
     fileContent += `\t\t\tfont-family: '${family.name}';\n`;
     fileContent += `\t\t\tfont-style: ${weight.properties.fontStyle};\n`;
     fileContent += `\t\t\tfont-weight: ${weight.properties.fontWeight};\n`;
+
+    if (italic) {
+      fileContent += `\t\t\tfont-feature-settings: 'ss02' 1;\n`;
+    }
+
     fileContent += `\t\t\tsrc: local('${localFileName}'), local('${localPostscriptName}'), url('${urls.woff2Split.replace('-#{$unicode-range}', '-#{tools.split-range($unicode-range)}')}') format('woff2');\n`;
     fileContent += `\t\t\tunicode-range: tools.get-range($unicode-range);\n`;
     fileContent += `\t\t}\t}\n}`;

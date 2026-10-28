@@ -28,3 +28,5 @@ Please download the latest zip files from our [releases page](https://github.com
 | IBM Plex Mono             | [@ibm/plex-mono](https://www.npmjs.com/package/@ibm/plex-mono)                         |
 | IBM Plex Sans             | [@ibm/plex-sans](https://www.npmjs.com/package/@ibm/plex-sans)                         |
 | IBM Plex Serif            | [@ibm/plex-serif](https://www.npmjs.com/package/@ibm/plex-serif)                       |
+
+Italic web fonts enable stylistic set `ss02` by default for the single-storey `g`, including accented forms. This applies to every italic weight in the generated CSS and SCSS and the supplied subset CSS files.
