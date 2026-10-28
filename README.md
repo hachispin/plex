@@ -13,11 +13,13 @@ Open the `.ttf` files in your desktop font manager to install them. Reinstall th
 
 All Sans, Serif, and Mono italics use the single-storey `g` and its accented forms by default. The `ss02` alternates are built into their character mappings, so no application feature setting is needed.
 
-After replacing TTFs with upstream versions, reapply the italic defaults:
+Standard ligatures (`liga`), such as `fi`, `fl`, `ff`, `ffi`, and `ffl`, are disabled in the font binaries.
+
+After replacing TTFs with upstream versions, reapply these defaults:
 
 ```sh
 python3 -m pip install -r requirements.txt
-python3 scripts/enable-italic-ss02.py
+python3 scripts/customize-fonts.py
 ```
 
 The fonts retain their original licenses; see [LICENSE.txt](LICENSE.txt) and the license files in each package.
