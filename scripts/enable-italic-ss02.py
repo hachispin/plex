@@ -1,19 +1,17 @@
-"""Make ss02 glyphs the defaults in the supplied italic font binaries.
+"""Make ss02 glyphs the defaults in the supplied italic desktop TTFs.
 
-Requires fonttools[woff]. Run again after replacing fonts with upstream builds.
+Requires fonttools. Run again after replacing fonts with upstream builds.
 """
 
 from collections import Counter
 from io import BytesIO
 from pathlib import Path
-import struct
 
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables.DefaultTable import DefaultTable
 
 
 PACKAGES = Path(__file__).resolve().parents[1] / "packages"
-FONT_FORMATS = {".ttf", ".otf", ".woff", ".woff2"}
 
 
 def enable_ss02(path):
@@ -61,13 +59,11 @@ def enable_ss02(path):
         if not changed:
             return False
 
-        # Reading features and glyph names decompiles GSUB and CFF. Preserve
-        # their original bytes so only character mappings and checksums change.
-        for tag in ("GSUB", "CFF "):
-            if tag in font:
-                original_table = DefaultTable(tag)
-                original_table.data = font.reader[tag]
-                font[tag] = original_table
+        # Reading features decompiles GSUB. Preserve its original bytes so only
+        # character mappings and checksums change.
+        original_gsub = DefaultTable("GSUB")
+        original_gsub.data = font.reader["GSUB"]
+        font["GSUB"] = original_gsub
 
         if "DSIG" in font and font["DSIG"].usNumSigs:
             del font["DSIG"]
@@ -80,58 +76,11 @@ def enable_ss02(path):
     return True
 
 
-def update_eot(path):
-    # EOT header layout: https://www.w3.org/submissions/EOT/
-    # Reuse its metadata and embed the matching updated TTF without compression.
-    original = path.read_bytes()
-    size, font_size, version, flags = struct.unpack_from("<IIII", original)
-
-    if size != len(original) or not 0 < font_size < size:
-        raise ValueError(f"Invalid EOT lengths: {path}")
-
-    if version != 0x00020002 or flags & ~0x00000004:
-        raise ValueError(f"Unsupported EOT version or flags: {path}")
-
-    font_path = path.parent.parent / "ttf" / path.with_suffix(".ttf").name
-    font_data = font_path.read_bytes()
-    header = bytearray(original[:-font_size])
-
-    with TTFont(BytesIO(font_data)) as font:
-        # Verify that the preserved EOT names describe this TTF.
-        offset = 82
-
-        for name_id in (1, 2, 5, 4):
-            name_size = struct.unpack_from("<H", header, offset)[0]
-            name = header[offset + 2:offset + 2 + name_size].decode("utf-16-le")
-
-            if name != font["name"].getDebugName(name_id):
-                raise ValueError(f"EOT/TTF name mismatch: {path}")
-
-            offset += 2 + name_size + 2
-
-        struct.pack_into("<II", header, 0, len(header) + len(font_data), len(font_data))
-        struct.pack_into("<I", header, 12, flags & ~0x00000004)
-        struct.pack_into("<I", header, 60, font["head"].checkSumAdjustment)
-
-    updated = header + font_data
-
-    if updated == original:
-        return False
-
-    path.write_bytes(updated)
-
-    return True
-
-
 def main():
     changed = Counter()
 
-    for path in sorted(PACKAGES.glob("plex-*/fonts/**/*Italic*")):
-        if path.suffix in FONT_FORMATS and enable_ss02(path):
-            changed[path.suffix] += 1
-
-    for path in sorted(PACKAGES.glob("plex-*/fonts/**/*.eot")):
-        if "Italic" in path.name and update_eot(path):
+    for path in sorted(PACKAGES.glob("plex-*/fonts/complete/ttf/*Italic.ttf")):
+        if enable_ss02(path):
             changed[path.suffix] += 1
 
     print("Updated italic fonts:", dict(sorted(changed.items())))

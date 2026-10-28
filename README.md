@@ -1,34 +1,23 @@
-# IBM Plex® typeface
+# IBM Plex desktop fonts
 
-<p align="center">
-  <a href="https://www.ibm.com/plex/">
-    <img alt="Plex" src="https://i.imgur.com/yB9xz60.jpg" />
-  </a>
-</p>
+Personal desktop fork of [IBM Plex](https://github.com/IBM/plex), containing complete TrueType fonts only.
 
-Meet the IBM Plex® typeface, our corporate typeface family. It’s global, it’s versatile and it’s distinctly IBM.
+| Family | TTF files |
+| --- | --- |
+| Sans | [packages/plex-sans/fonts/complete/ttf](packages/plex-sans/fonts/complete/ttf/) |
+| Serif | [packages/plex-serif/fonts/complete/ttf](packages/plex-serif/fonts/complete/ttf/) |
+| Mono | [packages/plex-mono/fonts/complete/ttf](packages/plex-mono/fonts/complete/ttf/) |
+| Math | [packages/plex-math/fonts/complete/ttf](packages/plex-math/fonts/complete/ttf/) |
 
-We designed the IBM Plex typeface carefully to meet our needs as a global tech company and express who we are as IBMers. It took two years and a lot of work to get here, but today, we have a signature typeface we’re proud of and excited to share with the world. Discover more about our development of the [IBM Plex typeface](https://www.ibm.com/plex/).
+Open the `.ttf` files in your desktop font manager to install them. Reinstall them after updating existing fonts.
 
-The IBM Plex typeface is an open-source project available for download and various uses following the Open Font License (OFL). This repository includes IBM Plex Sans, Serif, Mono, and Math. Sans, Serif, and Mono come with Roman and true italics. Plex has been designed to work well in user interface (UI) environments and other mediums. This project provides all source files and multiple formats to support most typographical situations. The included IBM Plex Sans supports extended Latin, Cyrillic, and Greek.
+All Sans, Serif, and Mono italics use the single-storey `g` and its accented forms by default. The `ss02` alternates are built into their character mappings, so no application feature setting is needed.
 
-Additionally, we have introduced IBM Plex® Math. This highly anticipated release includes over 5,000 new glyphs, covering a wide range of mathematical symbols such as alphanumeric, double-struck, Fraktur, operators, script, icons, arrows, Greek letters, phonetics, technical and geometric shapes — making it one of the most complete math fonts available today. IBM Plex Math provides a fresh and comprehensive alternative to STIX and Microsoft’s Cambria. Its compatibility with IBM Plex Serif Regular makes it an ideal choice for IBM researchers and mathematicians.
+After replacing TTFs with upstream versions, reapply the italic defaults:
 
-Thanks for trying the IBM Plex typeface! We hope you like it.
+```sh
+python3 -m pip install -r requirements.txt
+python3 scripts/enable-italic-ss02.py
+```
 
-## Add the IBM Plex typeface to your device
-
-Please download the latest zip files from our [releases page](https://github.com/IBM/plex/releases) for installation.
-
-### IBM Plex typeface packages
-
-| Package                   | NPM                                                                                    |
-| ------------------------- | -------------------------------------------------------------------------------------- |
-| IBM Plex Math             | [@ibm/plex-math](https://www.npmjs.com/package/@ibm/plex-math)                         |
-| IBM Plex Mono             | [@ibm/plex-mono](https://www.npmjs.com/package/@ibm/plex-mono)                         |
-| IBM Plex Sans             | [@ibm/plex-sans](https://www.npmjs.com/package/@ibm/plex-sans)                         |
-| IBM Plex Serif            | [@ibm/plex-serif](https://www.npmjs.com/package/@ibm/plex-serif)                       |
-
-Italic fonts use the single-storey `g`, including accented forms, by default in the font binaries and web styles. This applies to every italic weight in Sans, Serif, and Mono.
-
-After replacing font binaries with upstream builds, install `fonttools[woff]` and run `python3 scripts/enable-italic-ss02.py` to apply the same defaults to TTF, OTF, WOFF, WOFF2, and EOT files.
+The fonts retain their original licenses; see [LICENSE.txt](LICENSE.txt) and the license files in each package.

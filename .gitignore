@@ -1,25 +1,17 @@
-node_modules
-scss
-css
-*.log
-package-lock.json
-.DS_Store
-zip
-**/.DS_Store
-.vercel
-.parcel-cache
-.idea
-dist
-cdn
-/deploy-preview
-/public
-/tmp
-.env
-/.nx
-.vscode
+# Python
+__pycache__/
+*.py[cod]
+.venv/
 
-# Source files
-# https://github.com/IBM/plex/issues/554
+# Local files
+*.log
+.DS_Store
+.env
+.idea/
+.vscode/
+/tmp/
+
+# Font sources
 /sources
 /instances
 /masters
@@ -28,7 +20,3 @@ cdn
 *.vfb
 *.designspace
 *.ufo
-
-# Packages
-packages/*/css
-packages/*/scss
