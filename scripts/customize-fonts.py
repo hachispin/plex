@@ -8,7 +8,7 @@ from copy import deepcopy
 from io import BytesIO
 from pathlib import Path
 
-from fontTools.otlLib.builder import buildCoverage, buildLookup
+from fontTools.otlLib.builder import buildCoverage, buildLookup, buildValue
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables.DefaultTable import DefaultTable
 from fontTools.ttLib.tables import otTables
@@ -18,6 +18,7 @@ PACKAGES = Path(__file__).resolve().parents[1] / "packages"
 NUMERIC_COLON_FAMILIES = {"plex-sans", "plex-serif"}
 TEXT_DEFAULT_FAMILIES = {"plex-sans", "plex-serif", "plex-mono"}
 SLASH_KERNING_FAMILIES = {"plex-sans", "plex-serif"}
+ANGLE_KERNING_FAMILIES = {"plex-sans", "plex-serif"}
 
 
 def enable_italic_ss02(font):
@@ -191,6 +192,39 @@ def add_numeric_colon(font):
     return True
 
 
+def set_kerning_pair(subtable, first, second, value1, value2, glyph_map):
+    pairs = dict(zip(subtable.Coverage.glyphs, subtable.PairSet))
+
+    if first not in pairs:
+        pairs[first] = otTables.PairSet()
+        pairs[first].PairValueRecord = []
+
+    pair_set = pairs[first]
+    target = next(
+        (pair for pair in pair_set.PairValueRecord if pair.SecondGlyph == second),
+        None,
+    )
+
+    if target is not None and target.Value1 == value1 and target.Value2 == value2:
+        return False
+
+    if target is not None:
+        pair_set.PairValueRecord.remove(target)
+
+    replacement = otTables.PairValueRecord()
+    replacement.SecondGlyph = second
+    replacement.Value1 = deepcopy(value1)
+    replacement.Value2 = deepcopy(value2)
+    pair_set.PairValueRecord.append(replacement)
+    pair_set.PairValueRecord.sort(key=lambda pair: glyph_map[pair.SecondGlyph])
+    pair_set.PairValueCount = len(pair_set.PairValueRecord)
+    subtable.Coverage = buildCoverage(pairs, glyph_map)
+    subtable.PairSet = [pairs[glyph] for glyph in subtable.Coverage.glyphs]
+    subtable.PairSetCount = len(subtable.PairSet)
+
+    return True
+
+
 def match_repeated_slash_kerning(font):
     gpos = font.get("GPOS")
 
@@ -234,33 +268,50 @@ def match_repeated_slash_kerning(font):
             if source is None:
                 continue
 
-            if backslash not in pairs:
-                pairs[backslash] = otTables.PairSet()
-                pairs[backslash].PairValueRecord = []
-
-            pair_set = pairs[backslash]
-            target = next(
-                (pair for pair in pair_set.PairValueRecord if pair.SecondGlyph == backslash),
-                None,
-            )
-
-            if target is not None and target.Value1 == source.Value1 and target.Value2 == source.Value2:
-                continue
-
-            if target is not None:
-                pair_set.PairValueRecord.remove(target)
-
-            replacement = deepcopy(source)
-            replacement.SecondGlyph = backslash
-            pair_set.PairValueRecord.append(replacement)
-            pair_set.PairValueRecord.sort(key=lambda pair: glyph_map[pair.SecondGlyph])
-            pair_set.PairValueCount = len(pair_set.PairValueRecord)
-            subtable.Coverage = buildCoverage(pairs, glyph_map)
-            subtable.PairSet = [pairs[glyph] for glyph in subtable.Coverage.glyphs]
-            subtable.PairSetCount = len(subtable.PairSet)
-            changed = True
+            changed = set_kerning_pair(
+                subtable, backslash, backslash, source.Value1, source.Value2, glyph_map
+            ) or changed
 
     return changed
+
+
+def kern_repeated_angles(font):
+    gpos = font.get("GPOS")
+
+    if gpos is None or gpos.table.FeatureList is None:
+        return False
+
+    lookups = {
+        index
+        for feature in gpos.table.FeatureList.FeatureRecord
+        if feature.FeatureTag == "kern"
+        for index in feature.Feature.LookupListIndex
+    }
+    glyph_map = font.getReverseGlyphMap()
+    cmap = font.getBestCmap()
+    value = buildValue({"XAdvance": -round(font["head"].unitsPerEm * 0.1)})
+
+    # Use the final pair-positioning lookup so these explicit pairs take
+    # precedence over its class-based fallback without replacing other pairs.
+    for index in sorted(lookups, reverse=True):
+        lookup = gpos.table.LookupList.Lookup[index]
+
+        if lookup.LookupType != 2:
+            continue
+
+        for subtable in lookup.SubTable:
+            if subtable.Format != 1 or subtable.ValueFormat1 != 4 or subtable.ValueFormat2 != 0:
+                continue
+
+            changed = False
+
+            for character in "<>":
+                glyph = cmap[ord(character)]
+                changed = set_kerning_pair(subtable, glyph, glyph, value, None, glyph_map) or changed
+
+            return changed
+
+    raise ValueError("No suitable kerning lookup for repeated angle symbols")
 
 
 def customize_font(path):
@@ -278,6 +329,10 @@ def customize_font(path):
         kerning_changed = (
             match_repeated_slash_kerning(font) if path.parts[-5] in SLASH_KERNING_FAMILIES else False
         )
+        angle_kerning_changed = (
+            kern_repeated_angles(font) if path.parts[-5] in ANGLE_KERNING_FAMILIES else False
+        )
+        kerning_changed = kerning_changed or angle_kerning_changed
 
         if not any((italic_changed, ligatures_changed, numeric_colon_changed, kerning_changed)):
             return False

@@ -19,6 +19,8 @@ Standard ligatures (`liga`), such as `fi`, `fl`, `ff`, `ffi`, and `ffl`, are dis
 
 Sans and Serif apply the same pair kerning to repeated backslashes as repeated forward slashes, so runs such as `///` and `\\\` receive matching spacing adjustments.
 
+Repeated `<<` and `>>` pairs are tightened symmetrically in Sans and Serif, including longer runs. Each character remains a separate glyph.
+
 Sans and Serif use the existing ratio glyph (`∶`) for a colon directly between digits, as in `1:1` or `12:34`. This contextual alternate (`calt`) is enabled by default; other colons keep their usual appearance. It also works with alternate digit styles. Mono and Math do not apply this substitution.
 
 After replacing TTFs with upstream versions, reapply these defaults:
