@@ -15,7 +15,7 @@ The ordinary Sans, Serif, and Mono families use the heavier Text (450) design fo
 
 All Sans, Serif, and Mono italics use the single-storey `g` and its accented forms by default. The `ss02` alternates are built into their character mappings, so no application feature setting is needed.
 
-Standard ligatures (`liga`), such as `fi`, `fl`, `ff`, `ffi`, and `ffl`, are disabled in the font binaries.
+Standard ligatures (`liga`) are enabled in Serif, including its native `fi` and `fl` substitutions. They are disabled in Sans and Math; Mono has no standard ligatures.
 
 Sans and Serif apply the same pair kerning to repeated backslashes as repeated forward slashes, so runs such as `///` and `\\\` receive matching spacing adjustments.
 

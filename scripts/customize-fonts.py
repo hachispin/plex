@@ -73,6 +73,53 @@ def disable_standard_ligatures(font):
     return changed
 
 
+def enable_standard_ligatures(font):
+    cmap = font.getBestCmap()
+    standard_glyphs = {
+        cmap[codepoint] for codepoint in range(0xFB00, 0xFB07) if codepoint in cmap
+    }
+    gsub = font["GSUB"].table
+    indexes = set()
+
+    # Recover the original standard-ligature lookups without enabling the
+    # separate ligature lookups used for combining-mark composition.
+    for index, lookup in enumerate(gsub.LookupList.Lookup):
+        for subtable in lookup.SubTable:
+            lookup_type = lookup.LookupType
+
+            if lookup_type == 7:
+                lookup_type = subtable.ExtensionLookupType
+                subtable = subtable.ExtSubTable
+
+            if lookup_type != 4:
+                continue
+
+            if any(
+                record.LigGlyph in standard_glyphs
+                for records in subtable.ligatures.values()
+                for record in records
+            ):
+                indexes.add(index)
+
+    if not indexes:
+        raise ValueError("No standard ligature substitutions found")
+
+    changed = False
+
+    for feature in gsub.FeatureList.FeatureRecord:
+        if feature.FeatureTag != "liga":
+            continue
+
+        enabled = sorted(set(feature.Feature.LookupListIndex) | indexes)
+
+        if feature.Feature.LookupListIndex != enabled:
+            feature.Feature.LookupListIndex = enabled
+            feature.Feature.LookupCount = len(enabled)
+            changed = True
+
+    return changed
+
+
 def numeric_glyphs(font):
     cmap = font.getBestCmap()
     digits = {cmap[ord(digit)] for digit in "0123456789"}
@@ -322,7 +369,11 @@ def customize_font(path):
             return False
 
         italic_changed = enable_italic_ss02(font)
-        ligatures_changed = disable_standard_ligatures(font)
+        ligatures_changed = (
+            enable_standard_ligatures(font)
+            if path.parts[-5] == "plex-serif"
+            else disable_standard_ligatures(font)
+        )
         numeric_colon_changed = (
             add_numeric_colon(font) if path.parts[-5] in NUMERIC_COLON_FAMILIES else False
         )

@@ -81,10 +81,34 @@ class FontDefaultsTests(unittest.TestCase):
 
                 for feature in font["GSUB"].table.FeatureList.FeatureRecord:
                     if feature.FeatureTag == "liga":
-                        self.assertEqual(feature.Feature.LookupListIndex, [])
+                        if path.parts[-5] == "plex-serif":
+                            self.assertTrue(feature.Feature.LookupListIndex)
+                        else:
+                            self.assertEqual(feature.Feature.LookupListIndex, [])
 
                 if font["OS/2"].fsSelection & 1:
                     self.assertEqual(font.getBestCmap()[ord("g")], "g.alt01")
+
+    @unittest.skipUnless(shutil.which("hb-shape"), "Requires the HarfBuzz hb-shape command")
+    def test_standard_ligatures(self):
+        for path in FONT_PATHS:
+            with self.subTest(font=path.name):
+                default = shape(path, "fi fl")
+                disabled = shape(path, "fi fl", "liga=0")
+                enabled = shape(path, "fi fl", "liga=1")
+
+                self.assertEqual(default, enabled)
+
+                if path.parts[-5] == "plex-serif":
+                    with TTFont(path) as font:
+                        cmap = font.getBestCmap()
+                        expected = [cmap[0xFB01], cmap[ord(" ")], cmap[0xFB02]]
+
+                    self.assertEqual([glyph["g"] for glyph in default], expected)
+                    self.assertNotEqual(default, disabled)
+                    self.assertEqual(len(disabled), 5)
+                else:
+                    self.assertEqual(default, disabled)
 
     @unittest.skipUnless(shutil.which("hb-shape"), "Requires the HarfBuzz hb-shape command")
     def test_repeated_angle_kerning(self):
