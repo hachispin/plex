@@ -13,8 +13,8 @@ from fontTools.ttLib import TTFont
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FONT_PATHS = sorted((ROOT / "packages").glob("plex-*/fonts/complete/ttf/*.ttf"))
-TARGET_FAMILIES = {"plex-sans", "plex-serif"}
+FONT_PATHS = sorted((ROOT / "fonts").glob("*/*.ttf"))
+TARGET_FAMILIES = {"sans", "serif"}
 
 
 def shape(path, text, features=None):
@@ -29,7 +29,7 @@ def shape(path, text, features=None):
 class FontDefaultsTests(unittest.TestCase):
     def test_regular_uses_text_design(self):
         for path in FONT_PATHS:
-            if path.parts[-5] == "plex-math" or path.stem.rsplit("-", 1)[1] not in ("Regular", "Italic"):
+            if path.parent.name == "math" or path.stem.rsplit("-", 1)[1] not in ("Regular", "Italic"):
                 continue
 
             variant = "TextItalic" if path.stem.endswith("-Italic") else "Text"
@@ -49,11 +49,11 @@ class FontDefaultsTests(unittest.TestCase):
         promote = runpy.run_path(str(ROOT / "scripts/customize-fonts.py"))["use_text_as_regular"]
 
         with tempfile.TemporaryDirectory() as directory:
-            for family in ("plex-sans", "plex-serif", "plex-mono"):
-                target = Path(directory) / family / "fonts/complete/ttf"
+            for family in ("sans", "serif", "mono"):
+                target = Path(directory) / family
                 target.mkdir(parents=True)
 
-                for source in (ROOT / "packages" / family / "fonts/complete/ttf").glob("*.ttf"):
+                for source in (ROOT / "fonts" / family).glob("*.ttf"):
                     shutil.copyfile(source, target / source.name)
 
                 with self.subTest(family=family):
@@ -65,7 +65,7 @@ class FontDefaultsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             for path in FONT_PATHS:
                 with self.subTest(font=path.name):
-                    target = Path(directory) / path.parts[-5] / "fonts/complete/ttf" / path.name
+                    target = Path(directory) / path.parent.name / path.name
                     target.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copyfile(path, target)
                     before = hashlib.sha256(target.read_bytes()).digest()
@@ -81,7 +81,7 @@ class FontDefaultsTests(unittest.TestCase):
 
                 for feature in font["GSUB"].table.FeatureList.FeatureRecord:
                     if feature.FeatureTag == "liga":
-                        if path.parts[-5] == "plex-serif":
+                        if path.parent.name == "serif":
                             self.assertTrue(feature.Feature.LookupListIndex)
                         else:
                             self.assertEqual(feature.Feature.LookupListIndex, [])
@@ -99,7 +99,7 @@ class FontDefaultsTests(unittest.TestCase):
 
                 self.assertEqual(default, enabled)
 
-                if path.parts[-5] == "plex-serif":
+                if path.parent.name == "serif":
                     with TTFont(path) as font:
                         cmap = font.getBestCmap()
                         expected = [cmap[0xFB01], cmap[ord(" ")], cmap[0xFB02]]
@@ -129,7 +129,7 @@ class FontDefaultsTests(unittest.TestCase):
                         for glyph, original in zip(kerned[:-1], plain[:-1]):
                             self.assertGreater(glyph["ax"], 0)
 
-                            if path.parts[-5] in TARGET_FAMILIES:
+                            if path.parent.name in TARGET_FAMILIES:
                                 self.assertLess(glyph["ax"], original["ax"])
                             else:
                                 self.assertEqual(glyph, original)
@@ -156,7 +156,7 @@ class FontDefaultsTests(unittest.TestCase):
 
                     self.assertEqual(adjustments[0], adjustments[1])
 
-                    if path.parts[-5] in TARGET_FAMILIES:
+                    if path.parent.name in TARGET_FAMILIES:
                         self.assertLess(adjustments[0][0][0], 0)
 
     @unittest.skipUnless(shutil.which("hb-shape"), "Requires the HarfBuzz hb-shape command")
@@ -168,7 +168,7 @@ class FontDefaultsTests(unittest.TestCase):
             with self.subTest(font=path.name):
                 original = shape(path, numeric_text, "calt=0")
 
-                if path.parts[-5] in TARGET_FAMILIES:
+                if path.parent.name in TARGET_FAMILIES:
                     expected = shape(path, numeric_text.replace(":", "∶"), "calt=0")
                     self.assertNotEqual(expected, original)
                 else:
@@ -188,7 +188,7 @@ class FontDefaultsTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("hb-shape"), "Requires the HarfBuzz hb-shape command")
     def test_alternate_digits(self):
         for path in FONT_PATHS:
-            if path.parts[-5] not in TARGET_FAMILIES:
+            if path.parent.name not in TARGET_FAMILIES:
                 continue
 
             for features in ("onum=1", "zero=1", "ss01=1", "sups=1", "sinf=1"):

@@ -4,10 +4,10 @@ Personal desktop fork of [IBM Plex](https://github.com/IBM/plex), containing com
 
 | Family | TTF files |
 | --- | --- |
-| Sans | [packages/plex-sans/fonts/complete/ttf](packages/plex-sans/fonts/complete/ttf/) |
-| Serif | [packages/plex-serif/fonts/complete/ttf](packages/plex-serif/fonts/complete/ttf/) |
-| Mono | [packages/plex-mono/fonts/complete/ttf](packages/plex-mono/fonts/complete/ttf/) |
-| Math | [packages/plex-math/fonts/complete/ttf](packages/plex-math/fonts/complete/ttf/) |
+| Sans | [fonts/sans](fonts/sans/) |
+| Serif | [fonts/serif](fonts/serif/) |
+| Mono | [fonts/mono](fonts/mono/) |
+| Math | [fonts/math](fonts/math/) |
 
 Open the `.ttf` files in your desktop font manager to install them. Reinstall them after updating existing fonts.
 
@@ -32,4 +32,4 @@ python3 scripts/customize-fonts.py
 
 To verify the font defaults, run `python3 -m unittest discover -s tests`. Shaping checks require the HarfBuzz `hb-shape` command.
 
-The fonts retain their original licenses; see [LICENSE.txt](LICENSE.txt) and the license files in each package.
+The fonts retain their original licenses; see [LICENSE.txt](LICENSE.txt) and the license files in each family folder.

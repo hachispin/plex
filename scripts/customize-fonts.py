@@ -14,11 +14,11 @@ from fontTools.ttLib.tables.DefaultTable import DefaultTable
 from fontTools.ttLib.tables import otTables
 
 
-PACKAGES = Path(__file__).resolve().parents[1] / "packages"
-NUMERIC_COLON_FAMILIES = {"plex-sans", "plex-serif"}
-TEXT_DEFAULT_FAMILIES = {"plex-sans", "plex-serif", "plex-mono"}
-SLASH_KERNING_FAMILIES = {"plex-sans", "plex-serif"}
-ANGLE_KERNING_FAMILIES = {"plex-sans", "plex-serif"}
+FONTS = Path(__file__).resolve().parents[1] / "fonts"
+NUMERIC_COLON_FAMILIES = {"sans", "serif"}
+TEXT_DEFAULT_FAMILIES = {"sans", "serif", "mono"}
+SLASH_KERNING_FAMILIES = {"sans", "serif"}
+ANGLE_KERNING_FAMILIES = {"sans", "serif"}
 
 
 def enable_italic_ss02(font):
@@ -371,17 +371,17 @@ def customize_font(path):
         italic_changed = enable_italic_ss02(font)
         ligatures_changed = (
             enable_standard_ligatures(font)
-            if path.parts[-5] == "plex-serif"
+            if path.parent.name == "serif"
             else disable_standard_ligatures(font)
         )
         numeric_colon_changed = (
-            add_numeric_colon(font) if path.parts[-5] in NUMERIC_COLON_FAMILIES else False
+            add_numeric_colon(font) if path.parent.name in NUMERIC_COLON_FAMILIES else False
         )
         kerning_changed = (
-            match_repeated_slash_kerning(font) if path.parts[-5] in SLASH_KERNING_FAMILIES else False
+            match_repeated_slash_kerning(font) if path.parent.name in SLASH_KERNING_FAMILIES else False
         )
         angle_kerning_changed = (
-            kern_repeated_angles(font) if path.parts[-5] in ANGLE_KERNING_FAMILIES else False
+            kern_repeated_angles(font) if path.parent.name in ANGLE_KERNING_FAMILIES else False
         )
         kerning_changed = kerning_changed or angle_kerning_changed
 
@@ -413,7 +413,7 @@ def customize_font(path):
 def use_text_as_regular(directory):
     changed = []
 
-    if directory.parts[-4] not in TEXT_DEFAULT_FAMILIES:
+    if directory.name not in TEXT_DEFAULT_FAMILIES:
         return changed
 
     for source in sorted(directory.glob("*-Text*.ttf")):
@@ -451,15 +451,16 @@ def use_text_as_regular(directory):
 def main():
     changed = set()
 
-    for path in sorted(PACKAGES.glob("plex-*/fonts/complete/ttf/*.ttf")):
+    for path in sorted(FONTS.glob("*/*.ttf")):
         if customize_font(path):
             changed.add(path)
 
     # Promote Text only after its glyph defaults and contextual rules are ready.
-    for directory in sorted(PACKAGES.glob("plex-*/fonts/complete/ttf")):
-        changed.update(use_text_as_regular(directory))
+    for directory in sorted(FONTS.iterdir()):
+        if directory.is_dir():
+            changed.update(use_text_as_regular(directory))
 
-    counts = Counter(path.parts[-5] for path in changed)
+    counts = Counter(path.parent.name for path in changed)
 
     print("Updated desktop fonts:", dict(sorted(counts.items())))
 
